@@ -1,4 +1,4 @@
-Quipu - esolang inspired by Quipus (talking konts)
+Quipu - esolang inspired by Quipus (talking knots)
 ==================================================
 
 How to compile and run
