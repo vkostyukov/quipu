@@ -21,22 +21,8 @@
 
 package quipu
 
-object Main extends App {
-
-  val usage = "Use following command to run Quipu programm:\n" +
-    "java -jar quipu-0.0.1.jar programm.qp\n"
-
-  if (args.length > 1) {
-    try {
-      val (code, labels) = new BufferedParser(
-        scala.io.Source.fromFile(args(1))
-      ).parse()
-      new CaseInterpreter(code, labels).interpret()
-    } catch {
-      case pe: ParserException => println("Parser error: " + pe.getMessage)
-      case ie: InterpreterException => println("Interpreter error: " + ie.getMessage)
-    }
-  } else {
-    print(usage)
-  }
+class Thread {
+  var main: List[Knot] = Nil // main thread
+  var init: List[Knot] = Nil // initialization thread
+  var initialized: Boolean = false
 }
