@@ -9,6 +9,54 @@ Overview
 Code Samples
 ------------
 
+Prints "Hello World!" (without quotes)
+
+    a:  a.
+    'H  <<
+    'e
+    'l
+    'l
+    'o
+    ' 
+    'W
+    'o
+    'r
+    'l
+    'd
+    '!
+    \n
+
+Prints numbers from 0 to 99 to console
+
+    p.  i.  c.  e.
+
+    $i  1&  $i
+    <<  ++  1%
+    \n      --
+    <<      =e
+    ?i      ?p
+
+Calculates the sum of numbers from 0 to 99 and prints the result to console
+
+    s.  i.  c.  e.
+
+    $i  1&  $i  $s
+    ++  ++  1%  <<
+            --
+            =e
+            ?s
+
+Calculates the factorial of number 
+
+    a:  a.  b:  b.   e.
+          
+    >>  $a  1&  $a   $b 
+    =e  1&      1&   <<
+        --      ++
+        =e      $b
+                **
+                ?a
+                
 How to compile and run
 ----------------------
 
