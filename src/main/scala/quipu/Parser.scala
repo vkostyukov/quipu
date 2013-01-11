@@ -33,13 +33,55 @@ abstract class AbstractParser(source: Source) extends Parser
 
 class BufferedParser(source: Source) extends AbstractParser(source) {
 
-  val code: Seq[Char] = source.mkString
-
   def parse(): (Map[Char, Thread], List[Char]) = {
-    var threads: Map[Char, Thread] = Nil
+    var threads: Map[Char, Thread] = (Nil -> Nil)
+    var labels: List[Char] = Nil
 
+    var knots: List[AnyRef] = Nil
+    var starts: List[Int] = Nil
 
+    val lines = source.getLines
 
+    // perform the first line
+    if (lines.hasNext) {
+      val index = 0
+      val first: Seq[Char] = lines.next()
+      while (index < first.length) {
+
+        while (first(index).isWhitespace) index++
+
+        if (first(index).isLetter) {
+          val label = first(index++)
+          val t = if (threads.contains(label)) threads(label) else new Thread
+
+          threads += (label -> t)
+          if (first(index) == ':') {
+            knots = knots ::: t.init
+          } else if (first(index) == '.') {
+            knots = knots ::: t.main
+            labels = labels ::: label
+          } else {
+            throw new ParserException()
+          }
+          starts = starts ::: ++index
+        }
+      }
+    }
+
+    // perform the rest lines
+    lines foreach { line =>
+      var seq: Seq[Char] = line
+//      starts foreach { i =>
+//        seq(i) match {
+//          case Seq('\'', c) =>
+//          case Seq('\\', c) =>
+//        }
+      }
+    }
+
+    source.close()
+
+    return (threads, labels)
     // threads += ('a' -> 10)
   }
 }

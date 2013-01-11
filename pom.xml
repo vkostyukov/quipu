@@ -7,6 +7,21 @@
   <version>0.0.1</version>
   <name>quipu</name>
   <url>https://github.com/vkostyukov/quipu</url>
+  <description>An esoteric programming language inspired by talking knots.</description>
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>vkostyukov</id>
+      <name>Vladimir Kostyukov</name>
+      <email>vladimir.kostukov@gmail.com</email>
+    </developer>
+  </developers>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>

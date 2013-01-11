@@ -26,12 +26,12 @@ object Main extends App {
   val usage = "Use following command to run Quipu programm:\n" +
     "java -jar quipu-0.0.1.jar programm.qp\n"
 
-  if (args.length > 1) {
+  if (args.length > 0) {
     try {
       val (code, labels) = new BufferedParser(
-        scala.io.Source.fromFile(args(1))
+        scala.io.Source.fromFile(args(0))
       ).parse()
-      new CaseInterpreter(code, labels).interpret()
+      //new CaseInterpreter(code, labels).interpret()
     } catch {
       case pe: ParserException => println("Parser error: " + pe.getMessage)
       case ie: InterpreterException => println("Interpreter error: " + ie.getMessage)
