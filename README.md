@@ -49,12 +49,12 @@ Calculates the sum of numbers from 0 to 99 and prints the result to console
 Calculates the factorial of number 
 
     a:  a.  b:  b.   e.
-          
-    >>  $a  1&  $a   $b 
-    =e  1&      1&   <<
-        --      ++
-        =e      $b
-                **
+
+    >>  $a  1&  $a   $b
+        =e      1&   <<
+        1&      ++
+        --      $b
+        =e      **
                 ?a
                 
 How to compile and run
