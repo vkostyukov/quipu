@@ -33,19 +33,19 @@ class CaseInterpreter(threads: Map[Char, Thread], labels: List[Char])
 
   def interpret(){
     var pointer = 0
-    var halted = labels.length > 0
+    var halted = labels.length == 0
 
     while (!halted) { // over threads
       val thread = threads(labels(pointer))
 
       var stack: List[Any] = if (thread.initialized) thread.main(0) match {
-        case NumberKnot(n) => 1 :: Nil
+        case NumberKnot(n) => n :: Nil
         case StringKnot(s) => s :: Nil
-      } else (() => resolveThreadValue(thread)) :: Nil // lazy initialization (have no idea how does it work)
+      } else (() => resolveThreadValue(thread)) :: Nil // lazy initialization
 
-      var knots: List[Knot] = thread.main.tail // skips the init knot
+      var knots: List[Knot] = thread.main.tail.toList // skips the init knot
       var jumped = false
-      var finished = knots.length > 0
+      var finished = knots.length == 0
       while (!halted && !finished && !jumped) { // over knots
         knots.head match {
           case VarKnot(c) => stack = resolveThreadValue(c) :: stack
@@ -53,12 +53,12 @@ class CaseInterpreter(threads: Map[Char, Thread], labels: List[Char])
           case StringKnot(s) => stack = s :: stack
           case OperationKnot(fn) =>
             try {
-              stack = fn(stack(1), stack(0)) :: stack
+              stack = fn(fetchValue(stack(1)), stack(0)) :: stack
             } catch {
               case e: IndexOutOfBoundsException => throw new InterpreterException("a")
             }
           case JumpKnot(c, p) =>
-            if (p(stack(0))) {
+            if (p(fetchValue(stack(0)))) {
               jumped = true
               pointer = resolveJump(c)
             }
@@ -69,7 +69,7 @@ class CaseInterpreter(threads: Map[Char, Thread], labels: List[Char])
             } catch {
               case e: NumberFormatException => stack = str :: stack
             }
-          case OutKnot() => Console.println(stack(0))
+          case OutKnot() => Console.print(fetchValue(stack(0)))
           case HaltKnot() => halted = true
         }
         knots = knots.tail
@@ -85,7 +85,8 @@ class CaseInterpreter(threads: Map[Char, Thread], labels: List[Char])
       }
 
       if (!halted) {
-        thread.main = valueToKnot(stack(0)) :: thread.main.tail
+        thread.main(0) = valueToKnot(stack(0))
+        //thread.main = valueToKnot(stack(0)) :: thread.main.tail
       }
     }
   }
@@ -95,13 +96,13 @@ class CaseInterpreter(threads: Map[Char, Thread], labels: List[Char])
 
       var stack: List[Any] = 0 :: Nil
 
-      thread.init.tail foreach { knot => knot match {
+      thread.init foreach { knot => knot match {
         case VarKnot(c) => stack = resolveThreadValue(c) :: stack
         case NumberKnot(n) => stack = n :: stack
         case StringKnot(s) => stack = s :: stack
         case OperationKnot(fn) =>
           try {
-            stack = fn(stack(1), stack(0)) :: stack
+            stack = fn(fetchValue(stack(1)), stack(0)) :: stack
           } catch {
             case e: IndexOutOfBoundsException => throw new InterpreterException("a")
           }
@@ -112,11 +113,12 @@ class CaseInterpreter(threads: Map[Char, Thread], labels: List[Char])
           } catch {
             case e: NumberFormatException => stack = str :: stack
           }
-        case OutKnot() => Console.println(stack(0))
+        case OutKnot() => Console.print(fetchValue(stack(0)))
         case _ => throw new IllegalArgumentException("Not supported in init thread")
       }}
 
-      thread.main = valueToKnot(stack(0)) :: thread.main.tail
+      thread.main(0) = valueToKnot(stack(0))
+      //thread.main = valueToKnot(stack(0)) :: thread.main.tail
 
       thread.initialized = true
     }
@@ -146,5 +148,10 @@ class CaseInterpreter(threads: Map[Char, Thread], labels: List[Char])
   private def valueToKnot(v: Any): Knot = v match {
     case i: Int => new NumberKnot(i)
     case s: String => new StringKnot(s)
+  }
+
+  private def fetchValue(v: Any) = v match {
+    case lazzy: Function0[Any] => lazzy()
+    case x: Any => x
   }
 }

@@ -31,7 +31,7 @@ object Main extends App {
       val (code, labels) = new BufferedParser(
         scala.io.Source.fromFile(args(0))
       ).parse()
-      //new CaseInterpreter(code, labels).interpret()
+      new CaseInterpreter(code, labels).interpret()
     } catch {
       case pe: ParserException => println("Parser error: " + pe.getMessage)
       case ie: InterpreterException => println("Interpreter error: " + ie.getMessage)

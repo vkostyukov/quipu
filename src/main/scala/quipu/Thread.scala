@@ -21,8 +21,12 @@
 
 package quipu
 
+import collection.mutable._
+
 class Thread {
-  var main: List[Knot] = Nil // main thread
-  var init: List[Knot] = Nil // initialization thread
+  var main: ListBuffer[Knot] = ListBuffer(new NumberKnot(0)) // main thread
+  var init: ListBuffer[Knot] = ListBuffer() // initialization thread
   var initialized: Boolean = false
+
+
 }
