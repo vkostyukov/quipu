@@ -86,7 +86,7 @@ class CaseInterpreter(threads: Map[Char, Thread], labels: List[Char])
 
       if (!halted) {
         thread.main(0) = valueToKnot(stack(0))
-        //thread.main = valueToKnot(stack(0)) :: thread.main.tail
+        thread.initialized = true
       }
     }
   }

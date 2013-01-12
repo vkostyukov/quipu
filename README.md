@@ -56,7 +56,27 @@ Calculates the factorial of number
         --      $b
         =e      **
                 ?a
-                
+
+Prints the Fibonacci numbers
+
+    s.  f.  d.  a:  b:  a.  b.  x:  i.  t.  o.  e.
+
+    $x  $x  ',  1&  1&  $b  $f  >>  1&  1&  1&  '.
+    =e  2&  '               ?i      ++  <<  <<  <<
+    1&  --  <<                      ?f  ',  ?e
+    --  $i  $f                          '
+    =o  --  <<                          ?o
+    1&  =e
+    --  $a
+    =t  $b
+    1&  ++
+    <<
+    ',
+    '
+    <<
+    1&
+    <<
+
 How to compile and run
 ----------------------
 
