@@ -78,6 +78,13 @@ class BufferedParser(source: Source) extends AbstractParser(source) {
       }
     }
 
+    // adds empty threads (only with init part)
+    idents.indices foreach { i =>
+      if (!labels.contains(knots(i).head)) {
+        labels = labels :+ knots(i).head
+      }
+    }
+
     val strBuffer = Array.fill(idents.length) {""}
     val intBuffer = Array.fill(idents.length) {-1}
 
