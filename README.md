@@ -1,7 +1,7 @@
 Quipu Programming Language
 ==========================
 
-Quipu - is an esoteric programming language inspired by [Quipus](http://en.wikipedia.org/wiki/Quipu) (talking knots).
+Quipu - is an esoteric programming language inspired by [Quipus](http://en.wikipedia.org/wiki/Quipu) (talking knots - recording devices historically used by [Incs](http://en.wikipedia.org/wiki/Inca_Empire)).
 
 Overview
 --------
