@@ -14,8 +14,8 @@ Code Samples
 
 Prints "Hello World!" (without quotes)
 
-    a:  a.
-    'H  <<
+    a. 
+    'H
     'e
     'l
     'l
@@ -28,10 +28,11 @@ Prints "Hello World!" (without quotes)
     'd
     '!
     \n
+    <<
 
 Prints numbers from 0 to 99 to console
 
-    p.  i.  c.  e.
+    p.  i.  c.
 
     $i  1&  $i
     <<  ++  1%
@@ -49,36 +50,32 @@ Calculates the sum of numbers from 0 to 99 and prints the result to console
             =e
             ?s
 
-Calculates the factorial of number 
+Calculates the factorial of given number 
 
-    a:  a.  b:  b.   e.
+    n.  a.  b.  c.  q.  f.  o.
 
-    >>  $a  1&  $a   $b
-        =e      1&   <<
-        1&      ++
-        --      $b
-        =e      **
-                ?a
+    >>  $b  1&  $q  1&  $a  &1
+    =o  **  --  =q  $q  <<  <<
+        1&  $n  $b  --  ::
+        --  --  >a  >a
+        $q  $q
+        **  **
+        1&  $n
+        ++  ++
 
-Prints the Fibonacci numbers
+Prints the Fibonacci numbers for given limit
 
-    s.  f.  d.  a:  b:  a.  b.  x:  i.  t.  o.  e.
+    a.  b.  z.  x.  y.  w.  v.  q.  e.
 
-    $x  $x  ',  1&  1&  $b  $f  >>  1&  1&  1&  '.
-    =e  2&  '               ?i      ++  <<  <<  <<
-    1&  --  <<                      ?f  ',  ?e
-    --  $i  $f                          '
-    =o  --  <<                          ?o
-    1&  =e
-    --  $a
-    =t  $b
-    1&  ++
-    <<
-    ',
-    '
-    <<
-    1&
-    <<
+    >>  1&  $x  $y  $x  $q  $x  1&  $q
+        --      1&  $z  =v  <<  $q  >q
+        $a      --  ++  ',  $q  --  '.
+        --      $q      <<  >b  >b  <<
+        $q      **      ' 
+        **      1&      <<
+        $a      ++
+        ++
+        =e
 
 How to compile and run
 ----------------------
