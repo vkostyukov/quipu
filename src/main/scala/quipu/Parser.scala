@@ -22,100 +22,74 @@
 package quipu
 
 import io.Source
-import collection.mutable.ListBuffer
+import collection.mutable.{ArrayBuffer, ListBuffer}
+import collection.mutable
 
 class ParserException(message: String) extends Exception(message)
 
 trait Parser {
-  def parse(): (Map[Char, Thread], List[Char])
+  def parse(): Array[Array[Knot]]
 }
 
 abstract class AbstractParser(source: Source) extends Parser
 
 class BufferedParser(source: Source) extends AbstractParser(source) {
 
-  def parse(): (Map[Char, Thread], List[Char]) = {
-    var threads: Map[Char, Thread] = Map()
-    var labels: List[Char] = Nil
+  def parse(): Array[Array[Knot]] = {
 
-    var knots: Array[String] = new Array(52) // Sorry guys :(
-    var idents: List[Int] = Nil
+    type Thread = ArrayBuffer[Knot]
 
-    val lines = source.getLines
+    var threads: List[Int] = Nil // used to idents
 
-    // perform the first line
-    if (lines.hasNext) {
-      var index = 0
-      var cur = 0
-      val first: Seq[Char] = lines.next()
-      while (index < first.length) {
+    var strBuffer: Array[String] = Array()
+    var intBuffer: Array[Int] = Array()
 
-        while (first(index).isWhitespace) index += 1
+    var result: ArrayBuffer[Thread] = ArrayBuffer()
 
-        if (first(index).isLetter) {
+    source.getLines foreach { l =>
 
-          idents = idents :+ index
+      val line: Seq[Char] = l
 
-          val label: Char = first(index)
-          index += 1
-          val t = if (threads.contains(label)) threads(label) else new Thread
+      var index = 0 // pointer to line character
 
-          threads += (label -> t)
-          if (first(index) == ':') {
-            knots.update(cur, label.toString + ":")
-            //knots(cur) = t.init
-          } else if (first(index) == '.') {
-            knots.update(cur, label.toString + ".")
-            labels = labels :+ label
-          } else {
-            throw new ParserException("A")
+      // perform the first line
+      if (threads == Nil) {
+        if (line.length > 0 && line(0) != '"') {
+          while (index < line.length) {
+            while (index < line.length && line(index).isWhitespace) index += 1
+
+            if (index != line.length) {
+              val t = new Thread()
+              t += new NumberKnot(0)
+              result += t
+              threads = threads :+ index
+
+              index += 2
+            }
           }
-          cur += 1
-          index += 1
-        } else {
-          // TODO! no labels
+
+          strBuffer = Array.fill(threads.length) {""}
+          intBuffer = Array.fill(threads.length) {-1}
         }
       }
-    }
 
-    // adds empty threads (only with init part)
-    idents.indices foreach { i =>
-      if (!labels.contains(knots(i).head)) {
-        labels = labels :+ knots(i).head
-      }
-    }
-
-    val strBuffer = Array.fill(idents.length) {""}
-    val intBuffer = Array.fill(idents.length) {-1}
-
-    // perform the rest lines
-
-    lines foreach { lines =>
-      var seq: Seq[Char] = lines
-      idents.indices foreach { i =>
-        val idnt = idents(i)
-        val lbl = knots(i)
-        var thr = threads(lbl.head)
-        if (seq.length > idnt + 1) {
-          seq(idnt) match {
-            case '\'' => strBuffer(i) += seq(idnt + 1)
-            case '\\' =>
-              seq(idnt + 1) match {
-                case 'n' => strBuffer(i) += '\n'
-                case 't' => strBuffer(i) += '\t'
-             }
-            case '$' =>
-              if (lbl.last == '.') {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.main)
-                thr.main += new VarKnot(seq(idnt + 1))
-              } else {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.init)
-                thr.init += new VarKnot(seq(idnt + 1))
-              }
+      threads.indices foreach { i =>
+        index = threads(i)
+        val thread = result(i)
+        if (line.length > index + 1) {
+          line(index) match {
+            case '[' =>
+              dumpBuffers(intBuffer(i), strBuffer(i), thread)
+              thread += new ReferenceKnot
+              intBuffer(i) = -1
+              strBuffer(i) = ""
+            case '^' =>
+              dumpBuffers(intBuffer(i), strBuffer(i), thread)
+              thread += new SelfKnot
               intBuffer(i) = -1
               strBuffer(i) = ""
             case c: Char if c.isDigit =>
-              seq(idnt + 1) match {
+              line(index + 1) match {
                 case '&' =>
                   if (intBuffer(i) == -1) {
                     intBuffer(i) = 0
@@ -135,186 +109,107 @@ class BufferedParser(source: Source) extends AbstractParser(source) {
                   if (intBuffer(i) == -1) {
                     intBuffer(i) = 0
                   }
+                  if (intBuffer(i) != 0) {
+                    intBuffer(i) = intBuffer(i) * 10
+                  }
                   intBuffer(i) += c.toString.toInt * 1000
                }
+            case '\'' => strBuffer(i) += line(index + 1)
+            case '\\' =>
+              line(index + 1) match {
+                case 'n' => strBuffer(i) += '\n'
+                case 't' => strBuffer(i) += '\t'
+                case '/' =>
+                  dumpBuffers(intBuffer(i), strBuffer(i), thread)
+                  thread += new InKnot
+                  intBuffer(i) = -1
+                  strBuffer(i) = ""
+              }
             case '+' =>
-              if (lbl.last == '.') {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.main)
-                thr.main += new OperationKnot((x: Any, y: Any) => (x, y) match {
-                  case (x: Int, y: Int) => x + y
-                  case (x: String, y: String) => x + y
-                  case (x: Int, y: String) => x + y
-                  case (x: String, y: Int) => x + y
-                })
-              } else {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.init)
-                thr.init += new OperationKnot((x: Any, y: Any) => (x, y) match {
-                  case (x: Int, y: Int) => x + y
-                  case (x: String, y: String) => x + y
-                  case (x: Int, y: String) => x + y
-                  case (x: String, y: Int) => x + y
-                })
-              }
-              intBuffer(i) = -1
-              strBuffer(i) = ""
+                dumpBuffers(intBuffer(i), strBuffer(i), thread)
+                thread += new OperationKnot((x, y) => x + y)
+                intBuffer(i) = -1
+                strBuffer(i) = ""
             case '-' =>
-              if (lbl.last == '.') {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.main)
-                thr.main += new OperationKnot((x: Any, y: Any) => (x, y) match {
-                  case (x: Int, y: Int) => x - y
-                  case (_, _) => throw new ParserException("Can't")
-                })
-              } else {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.init)
-                thr.init += new OperationKnot((x: Any, y: Any) => (x, y) match {
-                  case (x: Int, y: Int) => x - y
-                  case (_, _) => throw new ParserException("Can't")
-                })
-              }
+              dumpBuffers(intBuffer(i), strBuffer(i), thread)
+              thread += new OperationKnot((x, y) => x - y)
               intBuffer(i) = -1
               strBuffer(i) = ""
             case '*' =>
-              if (lbl.last == '.') {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.main)
-                thr.main += new OperationKnot((x: Any, y: Any) => (x, y) match {
-                  case (x: Int, y: Int) => x * y
-                  case (_, _) => throw new ParserException("Can't")
-                })
-              } else {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.init)
-                thr.init += new OperationKnot((x: Any, y: Any) => (x, y) match {
-                  case (x: Int, y: Int) => x * y
-                  case (_, _) => throw new ParserException("Can't")
-                })
-              }
+              dumpBuffers(intBuffer(i), strBuffer(i), thread)
+              thread += new OperationKnot((x, y) => x * y)
               intBuffer(i) = -1
               strBuffer(i) = ""
             case '/' =>
-              if (lbl.last == '.') {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.main)
-                thr.main += new OperationKnot((x: Any, y: Any) => (x, y) match {
-                  case (x: Int, y: Int) => x / y
-                  case (_, _) => throw new ParserException("Can't")
-                })
-              } else {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.init)
-                thr.init += new OperationKnot((x: Any, y: Any) => (x, y) match {
-                  case (x: Int, y: Int) => x / y
-                  case (_, _) => throw new ParserException("Can't")
-                })
+              line(index + 1) match {
+                case '\\' =>
+                  dumpBuffers(intBuffer(i), strBuffer(i), thread)
+                  thread += new OutKnot
+                  intBuffer(i) = -1
+                  strBuffer(i) = ""
+                case '/' =>
+                  dumpBuffers(intBuffer(i), strBuffer(i), thread)
+                  thread += new OperationKnot((x, y) => x / y)
+                  intBuffer(i) = -1
+                  strBuffer(i) = ""
               }
+            case '%' =>
+              dumpBuffers(intBuffer(i), strBuffer(i), thread)
+              thread += new OperationKnot((x, y) => x % y)
               intBuffer(i) = -1
               strBuffer(i) = ""
-            case '%' =>
-              if (lbl.last == '.') {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.main)
-                thr.main += new OperationKnot((x: Any, y: Any) => (x, y) match {
-                  case (x: Int, y: Int) => x % y
-                  case (_, _) => throw new ParserException("Can't")
-                })
-              } else {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.init)
-                thr.init += new OperationKnot((x: Any, y: Any) => (x, y) match {
-                  case (x: Int, y: Int) => x % y
-                  case (_, _) => throw new ParserException("Can't")
-                })
-              }
+            case '=' =>
+              dumpBuffers(intBuffer(i), strBuffer(i), thread)
+              thread += new JumpKnot((x => x == 0))
+              intBuffer(i) = -1
+              strBuffer(i) = ""
+            case '?' =>
+              dumpBuffers(intBuffer(i), strBuffer(i), thread)
+              thread += new JumpKnot((x => true))
               intBuffer(i) = -1
               strBuffer(i) = ""
             case '<' =>
-              seq(idnt + 1) match {
-                case c: Char if c.isLetter =>
-                  if (lbl.last == '.') {
-                    dumpBuffers(intBuffer(i), strBuffer(i), thr.main)
-                    thr.main += new JumpKnot(c, (x) => x match {
-                      case x: Int => x < 0
-                      case _ => throw new ParserException("Can't")
-                    })
-                  } else {
-                    dumpBuffers(intBuffer(i), strBuffer(i), thr.init)
-                    thr.init += new JumpKnot(c, (x) => x match {
-                      case x: Int => x < 0
-                      case _ => throw new ParserException("Can't")
-                    })
-                  }
+              line(index + 1) match {
+                case '<' =>
+                  dumpBuffers(intBuffer(i), strBuffer(i), thread)
+                  thread += new JumpKnot((x => x < 0))
                   intBuffer(i) = -1
                   strBuffer(i) = ""
-                case _ =>
-                  if (lbl.last == '.') {
-                    dumpBuffers(intBuffer(i), strBuffer(i), thr.main)
-                    thr.main += new OutKnot
-                  } else {
-                    dumpBuffers(intBuffer(i), strBuffer(i), thr.init)
-                    thr.init += new OutKnot
-                  }
+                case '=' =>
+                  dumpBuffers(intBuffer(i), strBuffer(i), thread)
+                  thread += new JumpKnot((x => x <= 0))
                   intBuffer(i) = -1
                   strBuffer(i) = ""
               }
-            case '?' =>
-              if (lbl.last == '.') {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.main)
-                thr.main += new JumpKnot(seq(idnt + 1), (x) => true)
-              } else {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.init)
-                thr.init += new JumpKnot(seq(idnt + 1), (x) => true)
+            case '>' =>
+              line(index + 1) match {
+                case '>' =>
+                  dumpBuffers(intBuffer(i), strBuffer(i), thread)
+                  thread += new JumpKnot((x => x > 0))
+                  intBuffer(i) = -1
+                  strBuffer(i) = ""
+                case '=' =>
+                  dumpBuffers(intBuffer(i), strBuffer(i), thread)
+                  thread += new JumpKnot((x => x >= 0))
+                  intBuffer(i) = -1
+                  strBuffer(i) = ""
               }
+            case ';' =>
+              dumpBuffers(intBuffer(i), strBuffer(i), thread)
               intBuffer(i) = -1
               strBuffer(i) = ""
-            case '>' =>
-              seq(idnt + 1) match {
-                case c: Char if c.isLetter =>
-                  if (lbl.last == '.') {
-                    dumpBuffers(intBuffer(i), strBuffer(i), thr.main)
-                    thr.main += new JumpKnot(seq(idnt + 1), (x) => x match {
-                      case x: Int => x > 0
-                      case _ => throw new ParserException("Can't")
-                    })
-                  } else {
-                    dumpBuffers(intBuffer(i), strBuffer(i), thr.init)
-                    thr.init += new JumpKnot(seq(idnt + 1), (x) => x match {
-                      case x: Int => x > 0
-                      case _ => throw new ParserException("Can't")
-                    })
-                  }
-                  intBuffer(i) = -1
-                  strBuffer(i) = ""
-                case _ =>
-                  if (lbl.last == '.') {
-                    dumpBuffers(intBuffer(i), strBuffer(i), thr.main)
-                    thr.main += new InKnot
-                  } else {
-                    dumpBuffers(intBuffer(i), strBuffer(i), thr.init)
-                    thr.init += new InKnot
-                  }
-                  intBuffer(i) = -1
-                  strBuffer(i) = ""
-              }
-            case '=' =>
-              if (lbl.last == '.') {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.main)
-                thr.main += new JumpKnot(seq(idnt + 1), (x) => x match {
-                  case x: Int => x == 0
-                  case _ => throw new ParserException("Can't")
-                })
-              } else {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.init)
-                thr.init += new JumpKnot(seq(idnt + 1), (x) => x match {
-                  case x: Int => x == 0
-                  case _ => throw new ParserException("Can't")
-                })
-              }
             case ':' =>
-              if (lbl.last == '.') {
-                thr.main += new HaltKnot
-              } else {
-                thr.init += new HaltKnot
-              }
+              dumpBuffers(intBuffer(i), strBuffer(i), thread)
+              thread += new HaltKnot
+              intBuffer(i) = -1
+              strBuffer(i) = ""
+            case '#' =>
+              dumpBuffers(intBuffer(i), strBuffer(i), thread)
+              thread += new CopyKnot
+              intBuffer(i) = -1
+              strBuffer(i) = ""
             case ' ' =>
-              if (lbl.last == '.') {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.main)
-              } else {
-                dumpBuffers(intBuffer(i), strBuffer(i), thr.init)
-              }
+              dumpBuffers(intBuffer(i), strBuffer(i), thread)
               strBuffer(i) = ""
               intBuffer(i) = -1
           }
@@ -323,28 +218,27 @@ class BufferedParser(source: Source) extends AbstractParser(source) {
     }
 
     // dump all buffers
-    idents.indices foreach { i =>
-      val lbl = knots(i)
-      val thr = threads(lbl.head)
-
-      if (lbl.last == '.') {
-        dumpBuffers(intBuffer(i), strBuffer(i), thr.main)
-      } else {
-        dumpBuffers(intBuffer(i), strBuffer(i), thr.init)
-      }
+    threads.indices foreach { i =>
+      val thread = result(i)
+      dumpBuffers(intBuffer(i), strBuffer(i), thread)
     }
 
     source.close()
 
-    return (threads, labels)
+    val array: Array[Array[Knot]] = new Array(result.length)
+    result.indices foreach { i =>
+      array(i) = result(i).toArray
+    }
+
+    return array
   }
 
-  private def dumpBuffers(i: Int, s: String, thr: ListBuffer[Knot]) {
+  private def dumpBuffers(i: Int, s: String, thread: ArrayBuffer[Knot]) {
     if (i != -1) {
-      thr += new NumberKnot(i)
+      thread += new NumberKnot(i)
     }
     if (s != "") {
-      thr += new StringKnot(s)
+      thread += new StringKnot(s)
     }
   }
 }

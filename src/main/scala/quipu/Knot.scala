@@ -23,15 +23,20 @@ package quipu
 
 abstract class Knot
 
-case class VarKnot(thread: Char) extends Knot                       // $a
+case class ReferenceKnot extends Knot                               // []
 case class NumberKnot(value: Int) extends Knot                      // 1%2&
 case class StringKnot(value: String) extends Knot                   // 'a'b'c'\n
 
-case class OperationKnot(fn: (Any, Any) => Any) extends Knot        // ++, --, **, //, %%
+case class OperationKnot(fn: (Int, Int) => Int) extends Knot        // ++, --, **, //, %%
 
-case class JumpKnot(thread: Char, p: (Any) => Boolean) extends Knot // >a, <a, =a, ?a
+case class JumpKnot(p: (Int) => Boolean) extends Knot // >>, >=, <<, <=, ==, ??
 
-case class InKnot extends Knot                                      // >>
-case class OutKnot extends Knot                                     // <<
+case class InKnot extends Knot                                      // \/
+case class OutKnot extends Knot                                     // /\
 
 case class HaltKnot extends Knot                                    // ::
+
+case class SelfKnot extends Knot                                    // ^^
+case class CopyKnot extends Knot                                    // ##
+
+

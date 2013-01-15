@@ -26,132 +26,99 @@ class InterpreterException(message: String) extends Exception(message)
 trait Interpreter {
   def interpret()
 }
-abstract class AbstractInterpreter(threads: Map[Char, Thread], labels: List[Char] ) extends Interpreter
+abstract class AbstractInterpreter(code: Array[Array[Knot]]) extends Interpreter
 
-class CaseInterpreter(threads: Map[Char, Thread], labels: List[Char])
-  extends AbstractInterpreter(threads, labels) {
+class CaseInterpreter(code: Array[Array[Knot]])
+  extends AbstractInterpreter(code) {
 
-  def interpret(){
-    var pointer = 0
-    var halted = labels.length == 0
+  def interpret() {
+      var pointer = 0
+      var halted = code.length == 0
 
-    while (!halted) { // over threads
-      val thread = threads(labels(pointer))
+      while (!halted) { // over threads
+        val thread = code(pointer)
 
-      var stack: List[Any] = if (thread.initialized) thread.main(0) match {
-        case NumberKnot(n) => n :: Nil
-        case StringKnot(s) => s :: Nil
-      } else (() => resolveThreadValue(thread)) :: Nil // lazy initialization
-
-      var knots: List[Knot] = thread.main.tail.toList // skips the init knot
-      var jumped = false
-      var finished = knots.length == 0
-      while (!halted && !finished && !jumped) { // over knots
-        knots.head match {
-          case VarKnot(c) => stack = resolveThreadValue(c) :: stack
-          case NumberKnot(n) => stack = n :: stack
-          case StringKnot(s) => stack = s :: stack
-          case OperationKnot(fn) =>
-            try {
-              stack = fn(fetchValue(stack(1)), stack(0)) :: stack
-            } catch {
-              case e: IndexOutOfBoundsException => throw new InterpreterException("a")
-            }
-          case JumpKnot(c, p) =>
-            if (p(fetchValue(stack(0)))) {
-              jumped = true
-              pointer = resolveJump(c)
-            }
-          case InKnot() =>
-            val str = Console.readLine()
-            try {
-              stack = str.toInt :: stack
-            } catch {
-              case e: NumberFormatException => stack = str :: stack
-            }
-          case OutKnot() => Console.print(fetchValue(stack(0)))
-          case HaltKnot() => halted = true
+        var stack: List[Any] = thread(0) match {
+          case NumberKnot(n) => n :: Nil
+          case StringKnot(s) => s :: Nil
         }
-        knots = knots.tail
-        finished = (knots == Nil)
-      }
 
-      if (!jumped && !halted) {
-        if (pointer + 1 == labels.length) {
-          halted = true
-        } else {
-          pointer = pointer + 1
+        var knots: List[Knot] = thread.toList.tail // skips the self knot
+        var jumped = false
+        var finished = knots.length == 0
+
+        while (!halted && !finished && !jumped) { // over knots
+          knots.head match {
+            case ReferenceKnot() => stack = resolveThreadValue(stack(0)) :: stack.tail
+            case NumberKnot(n) => stack = n :: stack
+            case StringKnot(s) => stack = s :: stack
+            case SelfKnot() => stack = stack.last :: stack
+            case CopyKnot() => stack = stack(0) :: stack
+            case OperationKnot(fn) =>
+                try {
+                  (stack(1), stack(0)) match {
+                    case (a: Int, b: Int) => stack = fn(a, b) :: stack
+                    case _ => throw new InterpreterException("!")
+                  }
+                } catch {
+                  case e: IndexOutOfBoundsException => throw new InterpreterException("!")
+                }
+            case JumpKnot(p) =>
+              val target = stack(0)
+              stack = stack.tail
+              stack(0) match {
+                case i: Int =>
+                  if (p(i)) {
+                    jumped = true
+                    pointer = resolveJump(target)
+                  }
+                case _ => throw new InterpreterException("!")
+              }
+            case InKnot() =>
+              val str = Console.readLine()
+              try {
+                stack = str.toInt :: stack
+              } catch {
+                case e: NumberFormatException => stack = str :: stack
+              }
+            case OutKnot() => Console.print(stack(0))
+            case HaltKnot() => halted = true
+          }
+
+          knots = knots.tail
+          finished = (knots == Nil)
+        }
+
+        if (!jumped && !halted) {
+          if (pointer + 1 == code.length) {
+            halted = true
+          } else {
+            pointer = pointer + 1
+          }
+        }
+
+        if (!halted) {
+          thread(0) = valueToKnot(stack(0))
         }
       }
-
-      if (!halted) {
-        thread.main(0) = valueToKnot(stack(0))
-        thread.initialized = true
-      }
     }
-  }
 
-  private def initialize(thread: Thread) {
-    if (!thread.initialized) {
-
-      var stack: List[Any] = 0 :: Nil
-
-      thread.init foreach { knot => knot match {
-        case VarKnot(c) => stack = resolveThreadValue(c) :: stack
-        case NumberKnot(n) => stack = n :: stack
-        case StringKnot(s) => stack = s :: stack
-        case OperationKnot(fn) =>
-          try {
-            stack = fn(fetchValue(stack(1)), stack(0)) :: stack
-          } catch {
-            case e: IndexOutOfBoundsException => throw new InterpreterException("a")
-          }
-        case InKnot() =>
-          val str = Console.readLine()
-          try {
-            stack = str.toInt :: stack
-          } catch {
-            case e: NumberFormatException => stack = str :: stack
-          }
-        case OutKnot() => Console.print(fetchValue(stack(0)))
-        case _ => throw new IllegalArgumentException("Not supported in init thread")
-      }}
-
-      thread.main(0) = valueToKnot(stack(0))
-      //thread.main = valueToKnot(stack(0)) :: thread.main.tail
-
-      thread.initialized = true
-    }
-  }
-
-  private def resolveThreadValue(c: Char): Any = {
-    if (labels.contains(c)) {
-      return resolveThreadValue(threads(c))
-    } else {
-      throw new InterpreterException("No such thread '" + c + "'.")
-    }
-  }
-
-  private def resolveThreadValue(t: Thread): Any = {
-    initialize(t)
-    return t.main(0) match {
+  private def resolveThreadValue(n: Any): Any = n match {
+    case i: Int if (i < code.length) => code(i)(0) match {
       case NumberKnot(n) => n
       case StringKnot(s) => s
     }
+    case s: String => throw new InterpreterException("!")
+    case _ => throw new InterpreterException("!")
   }
 
-  private def resolveJump(c: Char): Int = {
-    if (labels.contains(c)) return labels.indexOf(c)
-    throw new InterpreterException("No such thread '" + c + "'.")
+  private def resolveJump(n: Any): Int = n match {
+    case i: Int if (i < code.length) => i
+    case _  => throw new InterpreterException("No such thread")
   }
 
   private def valueToKnot(v: Any): Knot = v match {
     case i: Int => new NumberKnot(i)
     case s: String => new StringKnot(s)
-  }
-
-  private def fetchValue(v: Any) = v match {
-    case lazzy: Function0[Any] => lazzy()
-    case x: Any => x
   }
 }

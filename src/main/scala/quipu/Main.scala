@@ -28,10 +28,11 @@ object Main extends App {
 
   if (args.length > 0) {
     try {
-      val (code, labels) = new BufferedParser(
+      val code = new BufferedParser(
         scala.io.Source.fromFile(args(0))
       ).parse()
-      new CaseInterpreter(code, labels).interpret()
+
+      new CaseInterpreter(code).interpret()
     } catch {
       case pe: ParserException => println("Parser error: " + pe.getMessage)
       case ie: InterpreterException => println("Interpreter error: " + ie.getMessage)
