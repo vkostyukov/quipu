@@ -63,7 +63,7 @@ class CaseInterpreter(code: Array[Array[Knot]])
                 } catch {
                   case e: IndexOutOfBoundsException => throw new InterpreterException("!")
                 }
-            case JumpKnot(p) =>
+            case ConditionalJumpKnot(p) =>
               val target = stack(0)
               stack = stack.tail
               stack(0) match {
@@ -74,6 +74,11 @@ class CaseInterpreter(code: Array[Array[Knot]])
                   }
                 case _ => throw new InterpreterException("!")
               }
+            case JumpKnot() =>
+              val target = stack(0)
+              stack = stack.tail
+              jumped = true
+              pointer = resolveJump(target)
             case InKnot() =>
               val str = Console.readLine()
               try {

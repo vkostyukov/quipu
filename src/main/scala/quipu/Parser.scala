@@ -160,24 +160,24 @@ class BufferedParser(source: Source) extends AbstractParser(source) {
               strBuffer(i) = ""
             case '=' =>
               dumpBuffers(intBuffer(i), strBuffer(i), thread)
-              thread += new JumpKnot((x => x == 0))
+              thread += new ConditionalJumpKnot((x => x == 0))
               intBuffer(i) = -1
               strBuffer(i) = ""
             case '?' =>
               dumpBuffers(intBuffer(i), strBuffer(i), thread)
-              thread += new JumpKnot((x => true))
+              thread += new JumpKnot
               intBuffer(i) = -1
               strBuffer(i) = ""
             case '<' =>
               line(index + 1) match {
                 case '<' =>
                   dumpBuffers(intBuffer(i), strBuffer(i), thread)
-                  thread += new JumpKnot((x => x < 0))
+                  thread += new ConditionalJumpKnot((x => x < 0))
                   intBuffer(i) = -1
                   strBuffer(i) = ""
                 case '=' =>
                   dumpBuffers(intBuffer(i), strBuffer(i), thread)
-                  thread += new JumpKnot((x => x <= 0))
+                  thread += new ConditionalJumpKnot((x => x <= 0))
                   intBuffer(i) = -1
                   strBuffer(i) = ""
               }
@@ -185,12 +185,12 @@ class BufferedParser(source: Source) extends AbstractParser(source) {
               line(index + 1) match {
                 case '>' =>
                   dumpBuffers(intBuffer(i), strBuffer(i), thread)
-                  thread += new JumpKnot((x => x > 0))
+                  thread += new ConditionalJumpKnot((x => x > 0))
                   intBuffer(i) = -1
                   strBuffer(i) = ""
                 case '=' =>
                   dumpBuffers(intBuffer(i), strBuffer(i), thread)
-                  thread += new JumpKnot((x => x >= 0))
+                  thread += new ConditionalJumpKnot((x => x >= 0))
                   intBuffer(i) = -1
                   strBuffer(i) = ""
               }

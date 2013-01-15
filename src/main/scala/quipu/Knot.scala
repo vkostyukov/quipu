@@ -29,7 +29,8 @@ case class StringKnot(value: String) extends Knot                   // 'a'b'c'\n
 
 case class OperationKnot(fn: (Int, Int) => Int) extends Knot        // ++, --, **, //, %%
 
-case class JumpKnot(p: (Int) => Boolean) extends Knot // >>, >=, <<, <=, ==, ??
+case class ConditionalJumpKnot(p: (Int) => Boolean) extends Knot    // >>, >=, <<, <=, ==
+case class JumpKnot extends Knot                                    // ??
 
 case class InKnot extends Knot                                      // \/
 case class OutKnot extends Knot                                     // /\
