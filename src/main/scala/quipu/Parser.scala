@@ -210,13 +210,13 @@ object Parser {
       }
     }
 
+    source.close()
+
     // dump all buffers
     threads.indices foreach { i =>
       val thread = result(i)
       dumpBuffers(intBuffer(i), strBuffer(i), thread)
     }
-
-    source.close()
 
     val array: Array[Array[Knot]] = new Array(result.length)
     result.indices foreach { i =>
