@@ -28,89 +28,88 @@ trait Interpreter {
 }
 abstract class AbstractInterpreter(code: Array[Array[Knot]]) extends Interpreter
 
-class CaseInterpreter(code: Array[Array[Knot]])
-  extends AbstractInterpreter(code) {
+class CaseInterpreter(code: Array[Array[Knot]]) extends AbstractInterpreter(code) {
 
   def interpret() {
-      var pointer = 0
-      var halted = code.length == 0
+    var pointer = 0
+    var halted = code.length == 0
 
-      while (!halted) { // over threads
-        val thread = code(pointer)
+    while (!halted) { // over threads
+      val thread = code(pointer)
 
-        var stack: List[Any] = thread(0) match {
-          case NumberKnot(n) => n :: Nil
-          case StringKnot(s) => s :: Nil
-        }
+      var stack: List[Any] = thread(0) match {
+        case NumberKnot(n) => n :: Nil
+        case StringKnot(s) => s :: Nil
+      }
 
-        var knots: List[Knot] = thread.toList.tail // skips the self knot
-        var jumped = false
-        var finished = knots.length == 0
+      var knots: List[Knot] = thread.toList.tail // skips the self knot
+      var jumped = false
+      var finished = knots.length == 0
 
-        while (!halted && !finished && !jumped) { // over knots
-          knots.head match {
-            case ReferenceKnot => stack = resolveThreadValue(stack(0)) :: stack.tail
-            case NumberKnot(n) => stack = n :: stack
-            case StringKnot(s) => stack = s :: stack
-            case SelfKnot => stack = stack.last :: stack
-            case CopyKnot => stack = stack(0) :: stack
-            case OperationKnot(fn) =>
-                try {
-                  (stack(1), stack(0)) match {
-                    case (a: Int, b: Int) => stack = fn(a, b) :: stack
-                    case _ => throw new InterpreterException("Type missmatch.")
-                  }
-                } catch {
-                  case e: IndexOutOfBoundsException =>
-                    throw new InterpreterException("Not enough arguments for operation.")
+      while (!halted && !finished && !jumped) { // over knots
+        knots.head match {
+          case ReferenceKnot => stack = resolveThreadValue(stack(0)) :: stack.tail
+          case NumberKnot(n) => stack = n :: stack
+          case StringKnot(s) => stack = s :: stack
+          case SelfKnot => stack = stack.last :: stack
+          case CopyKnot => stack = stack(0) :: stack
+          case OperationKnot(fn) =>
+            try {
+              (stack(1), stack(0)) match {
+                case (a: Int, b: Int) => stack = fn(a, b) :: stack
+                case _ => throw new InterpreterException("Type missmatch.")
+              }
+            } catch {
+              case e: IndexOutOfBoundsException =>
+                throw new InterpreterException("Not enough arguments for operation.")
+            }
+          case ConditionalJumpKnot(p) =>
+            val target = stack(0)
+            stack = stack.tail
+            stack(0) match {
+              case i: Int =>
+                if (p(i)) {
+                  jumped = true
+                  pointer = resolveJump(target)
                 }
-            case ConditionalJumpKnot(p) =>
-              val target = stack(0)
-              stack = stack.tail
-              stack(0) match {
-                case i: Int =>
-                  if (p(i)) {
-                    jumped = true
-                    pointer = resolveJump(target)
-                  }
-                case _ => throw new InterpreterException("!")
-              }
-            case JumpKnot =>
-              val target = stack(0)
-              stack = stack.tail
-              jumped = true
-              pointer = resolveJump(target)
-            case InKnot =>
-              val str = Console.readLine()
-              try {
-                stack = str.toInt :: stack
-              } catch {
-                case e: NumberFormatException => stack = str :: stack
-              }
-            case OutKnot => Console.print(stack(0))
-            case HaltKnot => halted = true
-          }
-
-          knots = knots.tail
-          finished = (knots == Nil)
+              case _ => throw new InterpreterException("!")
+            }
+          case JumpKnot =>
+            val target = stack(0)
+            stack = stack.tail
+            jumped = true
+            pointer = resolveJump(target)
+          case InKnot =>
+            val str = Console.readLine()
+            try {
+              stack = str.toInt :: stack
+            } catch {
+              case e: NumberFormatException => stack = str :: stack
+            }
+          case OutKnot => Console.print(stack(0))
+          case HaltKnot => halted = true
         }
 
-        if (!jumped && !halted) {
-          if (pointer + 1 == code.length) {
-            halted = true
-          } else {
-            pointer = pointer + 1
-          }
-        }
+        knots = knots.tail
+        finished = (knots == Nil)
+      }
 
-        if (!halted) {
-          thread(0) = stack(0) match {
-            case i: Int => new NumberKnot(i)
-            case s: String => new StringKnot(s)
-          }
+      if (!jumped && !halted) {
+        if (pointer + 1 == code.length) {
+          halted = true
+        } else {
+          pointer = pointer + 1
+        }
+      }
+
+      if (!halted) {
+        thread(0) = stack(0) match {
+          case i: Int => new NumberKnot(i)
+          case s: String => new StringKnot(s)
         }
       }
     }
+  }
 
   private def resolveThreadValue(n: Any): Any = n match {
     case i: Int if (i < code.length) => code(i)(0) match {
