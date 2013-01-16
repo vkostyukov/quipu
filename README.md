@@ -1,20 +1,14 @@
 Quipu Programming Language
 ==========================
 
-Quipu - is an esoteric programming language inspired by [Quipus](http://en.wikipedia.org/wiki/Quipu)
-(also known as "talking knots") - recording devices historically used by [Incs](http://en.wikipedia.org/wiki/Inca_Empire).
-
-The Quipu Language Specifications
------------------------------
-
-Programm on Quipu
+[Quipu](http://esolangs.org/wiki/Quipu) - is an esoteric programming language inspired by [Quipus](http://en.wikipedia.org/wiki/Quipu)
+(also known as "talking knots") - recording devices historically used by [Incs](http://en.wikipedia.org/wiki/Inca_Empire). 
 
 Code Samples
 ------------
 
 Prints "Hello World!" (without quotes)
 
-    a. 
     'H
     'e
     'l
@@ -28,54 +22,41 @@ Prints "Hello World!" (without quotes)
     'd
     '!
     \n
-    <<
-
-Prints numbers from 0 to 99 to console
-
-    p.  i.  c.
-
-    $i  1&  $i
-    <<  ++  1%
-    \n      --
-    <<      =e
-    ?i      ?p
-
-Calculates the sum of numbers from 0 to 99 and prints the result to console
-
-    s.  i.  c.  e.
-
-    $i  1&  $i  $s
-    ++  ++  1%  <<
-            --
-            =e
-            ?s
+    /\
 
 Calculates the factorial of given number 
 
-    n.  a.  b.  c.  q.  f.  o.
+    "0  1  2  3  4  5  6"
 
-    >>  $b  1&  $q  1&  $a  &1
-    =o  **  --  =q  $q  <<  <<
-        1&  $n  $b  --  ::
-        --  --  >a  >a
-        $q  $q
-        **  **
-        1&  $n
-        ++  ++
+    \/ 2& 1& 4& 1& 1& 1&
+    6& [] -- [] ^^ [] /\
+    == ** 0& 4& -- /\    
+       1& [] == 1& :: 
+       -- -- 2& >>        
+       4& 4& []           
+       [] [] 1&           
+       ** ** >>          
+       1& 0&
+       ++ []
+          ++
 
-Prints the Fibonacci numbers for given limit
+Prints the first N members of Fibonacci sequence
 
-    a.  b.  z.  x.  y.  w.  v.  q.  e.
+    "0  1  2  3  4  5  6  7  8"
 
-    >>  1&  $x  $y  $x  $q  $x  1&  $q
-        --      1&  $z  =v  <<  $q  >q
-        $a      --  ++  ',  $q  --  '.
-        --      $q      <<  >b  >b  <<
-        $q      **      ' 
-        **      1&      <<
-        $a      ++
-        ++
-        =e
+    \/ 1& 3& 4& 3& 7& 3& 1& 7&
+       -- [] [] [] [] [] ^^ []
+       0&    1& 2& 6& /\ -- 7&
+       []    -- [] == 7& 1& >>
+       --    7& ++ ', [] >> '.
+       7&    []    /\ 1&    /\
+       []    **    '  >>
+       **    1&    /\
+       0&    ++
+       []
+       ++
+       8&
+       ==
 
 How to compile and run
 ----------------------
@@ -84,7 +65,7 @@ Cmpile the sources:
 
     mvn assembly:single
     
-And run Quipu porgramm:
+And run Quipu porgram:
 
     java -jar target/quipu-0.0.1-jar-with-dependencies.jar programm.qp
 
