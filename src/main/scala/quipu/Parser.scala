@@ -80,12 +80,12 @@ class BufferedParser(source: Source) extends AbstractParser(source) {
           line(index) match {
             case '[' =>
               dumpBuffers(intBuffer(i), strBuffer(i), thread)
-              thread += new ReferenceKnot
+              thread += ReferenceKnot
               intBuffer(i) = -1
               strBuffer(i) = ""
             case '^' =>
               dumpBuffers(intBuffer(i), strBuffer(i), thread)
-              thread += new SelfKnot
+              thread += SelfKnot
               intBuffer(i) = -1
               strBuffer(i) = ""
             case c: Char if c.isDigit =>
@@ -121,7 +121,7 @@ class BufferedParser(source: Source) extends AbstractParser(source) {
                 case 't' => strBuffer(i) += '\t'
                 case '/' =>
                   dumpBuffers(intBuffer(i), strBuffer(i), thread)
-                  thread += new InKnot
+                  thread += InKnot
                   intBuffer(i) = -1
                   strBuffer(i) = ""
               }
@@ -144,7 +144,7 @@ class BufferedParser(source: Source) extends AbstractParser(source) {
               line(index + 1) match {
                 case '\\' =>
                   dumpBuffers(intBuffer(i), strBuffer(i), thread)
-                  thread += new OutKnot
+                  thread += OutKnot
                   intBuffer(i) = -1
                   strBuffer(i) = ""
                 case '/' =>
@@ -165,7 +165,7 @@ class BufferedParser(source: Source) extends AbstractParser(source) {
               strBuffer(i) = ""
             case '?' =>
               dumpBuffers(intBuffer(i), strBuffer(i), thread)
-              thread += new JumpKnot
+              thread += JumpKnot
               intBuffer(i) = -1
               strBuffer(i) = ""
             case '<' =>
@@ -200,12 +200,12 @@ class BufferedParser(source: Source) extends AbstractParser(source) {
               strBuffer(i) = ""
             case ':' =>
               dumpBuffers(intBuffer(i), strBuffer(i), thread)
-              thread += new HaltKnot
+              thread += HaltKnot
               intBuffer(i) = -1
               strBuffer(i) = ""
             case '#' =>
               dumpBuffers(intBuffer(i), strBuffer(i), thread)
-              thread += new CopyKnot
+              thread += CopyKnot
               intBuffer(i) = -1
               strBuffer(i) = ""
             case ' ' =>

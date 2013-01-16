@@ -49,19 +49,20 @@ class CaseInterpreter(code: Array[Array[Knot]])
 
         while (!halted && !finished && !jumped) { // over knots
           knots.head match {
-            case ReferenceKnot() => stack = resolveThreadValue(stack(0)) :: stack.tail
+            case ReferenceKnot => stack = resolveThreadValue(stack(0)) :: stack.tail
             case NumberKnot(n) => stack = n :: stack
             case StringKnot(s) => stack = s :: stack
-            case SelfKnot() => stack = stack.last :: stack
-            case CopyKnot() => stack = stack(0) :: stack
+            case SelfKnot => stack = stack.last :: stack
+            case CopyKnot => stack = stack(0) :: stack
             case OperationKnot(fn) =>
                 try {
                   (stack(1), stack(0)) match {
                     case (a: Int, b: Int) => stack = fn(a, b) :: stack
-                    case _ => throw new InterpreterException("!")
+                    case _ => throw new InterpreterException("Type missmatch.")
                   }
                 } catch {
-                  case e: IndexOutOfBoundsException => throw new InterpreterException("!")
+                  case e: IndexOutOfBoundsException =>
+                    throw new InterpreterException("Not enough arguments for operation.")
                 }
             case ConditionalJumpKnot(p) =>
               val target = stack(0)
@@ -74,20 +75,20 @@ class CaseInterpreter(code: Array[Array[Knot]])
                   }
                 case _ => throw new InterpreterException("!")
               }
-            case JumpKnot() =>
+            case JumpKnot =>
               val target = stack(0)
               stack = stack.tail
               jumped = true
               pointer = resolveJump(target)
-            case InKnot() =>
+            case InKnot =>
               val str = Console.readLine()
               try {
                 stack = str.toInt :: stack
               } catch {
                 case e: NumberFormatException => stack = str :: stack
               }
-            case OutKnot() => Console.print(stack(0))
-            case HaltKnot() => halted = true
+            case OutKnot => Console.print(stack(0))
+            case HaltKnot => halted = true
           }
 
           knots = knots.tail
@@ -103,7 +104,10 @@ class CaseInterpreter(code: Array[Array[Knot]])
         }
 
         if (!halted) {
-          thread(0) = valueToKnot(stack(0))
+          thread(0) = stack(0) match {
+            case i: Int => new NumberKnot(i)
+            case s: String => new StringKnot(s)
+          }
         }
       }
     }
@@ -113,17 +117,11 @@ class CaseInterpreter(code: Array[Array[Knot]])
       case NumberKnot(n) => n
       case StringKnot(s) => s
     }
-    case s: String => throw new InterpreterException("!")
-    case _ => throw new InterpreterException("!")
+    case _  => throw new InterpreterException("No such thread: \"" + n + "\".")
   }
 
   private def resolveJump(n: Any): Int = n match {
     case i: Int if (i < code.length) => i
-    case _  => throw new InterpreterException("No such thread")
-  }
-
-  private def valueToKnot(v: Any): Knot = v match {
-    case i: Int => new NumberKnot(i)
-    case s: String => new StringKnot(s)
+    case _  => throw new InterpreterException("No such thread: \"" + n + "\".")
   }
 }
