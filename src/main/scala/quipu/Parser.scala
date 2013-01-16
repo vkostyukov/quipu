@@ -22,20 +22,13 @@
 package quipu
 
 import io.Source
-import collection.mutable.{ArrayBuffer, ListBuffer}
-import collection.mutable
+import collection.mutable.{ArrayBuffer}
 
 class ParserException(message: String) extends Exception(message)
 
-trait Parser {
-  def parse(): Array[Array[Knot]]
-}
+object Parser {
 
-abstract class AbstractParser(source: Source) extends Parser
-
-class BufferedParser(source: Source) extends AbstractParser(source) {
-
-  def parse(): Array[Array[Knot]] = {
+  def apply(source: Source): Array[Array[Knot]] = {
 
     type Thread = ArrayBuffer[Knot]
 

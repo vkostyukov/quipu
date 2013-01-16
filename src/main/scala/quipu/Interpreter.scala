@@ -23,14 +23,15 @@ package quipu
 
 class InterpreterException(message: String) extends Exception(message)
 
-trait Interpreter {
-  def interpret()
-}
-abstract class AbstractInterpreter(code: Array[Array[Knot]]) extends Interpreter
+object Interpreter {
 
-class CaseInterpreter(code: Array[Array[Knot]]) extends AbstractInterpreter(code) {
+  def apply(code: Array[Array[Knot]]) {
 
-  def interpret() {
+    def resolveJump(n: Any): Int = n match {
+      case i: Int if (i < code.length) => i
+      case _  => throw new InterpreterException("No such thread: \"" + n + "\".")
+    }
+
     var pointer = 0
     var halted = code.length == 0
 
@@ -48,7 +49,15 @@ class CaseInterpreter(code: Array[Array[Knot]]) extends AbstractInterpreter(code
 
       while (!halted && !finished && !jumped) { // over knots
         knots.head match {
-          case ReferenceKnot => stack = resolveThreadValue(stack(0)) :: stack.tail
+          case ReferenceKnot =>
+            val ref = stack(0) match {
+              case i: Int if (i < code.length) => code(i)(0) match {
+                case NumberKnot(n) => n
+                case StringKnot(s) => s
+              }
+              case _  => throw new InterpreterException("No such thread: \"" + stack(0) + "\".")
+            }
+            stack = ref :: stack.tail
           case NumberKnot(n) => stack = n :: stack
           case StringKnot(s) => stack = s :: stack
           case SelfKnot => stack = stack.last :: stack
@@ -109,18 +118,5 @@ class CaseInterpreter(code: Array[Array[Knot]]) extends AbstractInterpreter(code
         }
       }
     }
-  }
-
-  private def resolveThreadValue(n: Any): Any = n match {
-    case i: Int if (i < code.length) => code(i)(0) match {
-      case NumberKnot(n) => n
-      case StringKnot(s) => s
-    }
-    case _  => throw new InterpreterException("No such thread: \"" + n + "\".")
-  }
-
-  private def resolveJump(n: Any): Int = n match {
-    case i: Int if (i < code.length) => i
-    case _  => throw new InterpreterException("No such thread: \"" + n + "\".")
   }
 }
