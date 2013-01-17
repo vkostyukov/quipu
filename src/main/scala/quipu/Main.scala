@@ -22,15 +22,11 @@
 package quipu
 
 object Main extends App {
-
-  val usage = "Use following command to run Quipu programm:\n" +
-    "java -jar <quipu-jar-file> programm.qp\n"
-
   try {
     Interpreter(Parser(scala.io.Source.fromFile(args(0))))
   } catch {
     case pe: ParserException => println("Parser error: " + pe.getMessage)
     case ie: InterpreterException => println("Interpreter error: " + ie.getMessage)
-    case _: IndexOutOfBoundsException => println(usage)
+    case _: IndexOutOfBoundsException => println("No input file.")
   }
 }

@@ -102,16 +102,19 @@ Prints the first N members of Fibonacci sequence
                                                                 []
                                                                 /\
 
+
 How to compile and run
 ----------------------
 
-Cmpile the sources:
+*With Scala environment*
+
+    mvn package
+    scala -jar target/quipu-0.1.0.jar program.qp
+
+*Without Scala environment (JDK required)*
 
     mvn assembly:single
-    
-And run Quipu porgram:
-
-    java -jar target/quipu-0.0.1-jar-with-dependencies.jar programm.qp
+    java -jar target/quipu-0.1.0-jar-with-dependencies.jar program.qp
 
 ----
 by [Vladimir Kostyukov](http://vkostyukov.ru), 2013

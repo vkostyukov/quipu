@@ -81,7 +81,7 @@ object Interpreter {
                   jumped = true
                   pointer = resolveJump(target)
                 }
-              case _ => throw new InterpreterException("!")
+              case _ => throw new InterpreterException("Can't apply jump predicate to: " + stack(0))
             }
           case JumpKnot =>
             val target = stack(0)
